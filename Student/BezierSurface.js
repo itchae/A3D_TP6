@@ -156,8 +156,13 @@ BezierSurface.prototype.bernstein = function(u) {
 * @param u the parametric value
 * @return B'_{i,3}(u)
 */
-BezierSurface.prototype.bernsteinDeriv = function(u) {
-
+BezierSurface.prototype.bernsteinDeriv = function(u) { //Dérivée de Bernstein en fonction de u
+  var v = 1-u;
+  return [-3*(v*v),
+           3*(v*v-2*u*v),
+           3*(2*u*v-u*u),
+           3*u*u
+        ];
 
 }
 
@@ -171,8 +176,6 @@ BezierSurface.prototype.Q = function( u, v ) {
     var vec = new PointData( this.points[0].GetSize() );
 	// TODO: computes the coordinates ...
 
-  // var bernstein
-  //var bernstein
   var bernsteinU = this.bernstein(u);
   var bernsteinV = this.bernstein(v);
   //   2- de Casteljau (n-1)-order interpolation on this copied array ...
@@ -192,10 +195,24 @@ BezierSurface.prototype.Q = function( u, v ) {
 */
 BezierSurface.prototype.dQ = function( u, v ) {
 	// TODO: computes the coordinates ...
-    var dpdu = [0, 0, 0];
-    var dpdv = [0, 0, 0];
-	  var normal = [1,1,1,1];
+  var bernsteinU = this.bernstein(u);
+  var bernsteinV = this.bernstein(v);
+  var dbernsteinU = this.bernsteinDeriv(u);
+  var dbernsteinV = this.bernsteinDeriv(v);
+
+  var dpdu    = new PointData( this.points[0].GetSize() );
+  var dpdv    = this.bernsteinDeriv(v);
+  var normal  = this.bernsteinDeriv(u*v);
+
+  for(var i=0 ; i<4 ; i++){
+    for(var j=0 ; j<4 ; j++){
+      dpdu.AddScale(bernsteinU[i]*dbernsteinV[j] + dbernsteinU[i]*bernsteinV[j], this.points[i*4+j]);
+    }
+  }
+
+
 	// fill the normal, tangent, bitangent, and texture coordinates ...
+
     var data = [];
     // surface normal
     this.addANormal( data, normal);
